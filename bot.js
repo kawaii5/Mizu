@@ -16,7 +16,7 @@ client.on("ready", () => {
   console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`); 
   // Example of changing the bot's playing game to something useful. `client.user` is what the
   // docs refer to as the "ClientUser".
-  client.user.setActivity(`Serving ${client.guilds.size} servers`);
+  client.user.setActivity(`Go with the flow...`);
 });
 
 client.on("guildCreate", guild => {
@@ -30,17 +30,6 @@ client.on("guildDelete", guild => {
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
   client.user.setActivity(`Serving ${client.guilds.size} servers`);
 });
-
-// Create an event listener for new guild members
-client.on('guildMemberAdd', member => {
-  // Send the message to a designated channel on a server:
-  const channel = member.guild.channels.find(ch => ch.name === 'member-log');
-  // Do nothing if the channel wasn't found on this server
-  if (!channel) return;
-  // Send the message, mentioning the member
-  channel.send(`Welcome to the server, ${member}`);
-});
-
 
 client.on("message", async message => {
   // This event will run on every single message received, from any channel or DM.
@@ -69,48 +58,13 @@ client.on("message", async message => {
     m.edit(`Pong! Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`);
   }
   
-  if(command === "say") {
-    // makes the bot say something and delete the message. As an example, it's open to anyone to use. 
-    // To get the "message" itself we join the `args` back into a string with spaces: 
-    const sayMessage = args.join(" ");
-    // Then we delete the command message (sneaky, right?). The catch just ignores the error with a cute smiley thing.
-    message.delete().catch(O_o=>{}); 
-    // And we get the bot to say the thing: 
-    message.channel.send(sayMessage);
-  }
-  
-  if(command === "purge") {
-    // This command removes all messages from all users in the channel, up to 100.
-    
-    // get the delete count, as an actual number.
-    const deleteCount = parseInt(args[0], 10);
-    
-    // Ooooh nice, combined conditions. <3
-    if(!deleteCount || deleteCount < 2 || deleteCount > 100)
-      return message.reply("Please provide a number between 2 and 100 for the number of messages to delete");
-    
-    // So we get our messages, and delete them. Simple enough, right?
-    const fetched = await message.channel.fetchMessages({limit: deleteCount});
-    message.channel.bulkDelete(fetched)
-      .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
-  }
-  
-  if(command === "avatar") {
-	  message.channel.send(message.author.avatarURL);
-  }
-  
-  if(command === "tag") {
-	  message.channel.send(message.author.tag);
-  }
-  
 	if (command === 'roles') {
-		//var mods = message.guild.roles.find(role => role.name === "Admin");
-		//console.log(mods);
-		if(message.member.roles.has("592581668796104705")) {
+		//const adminRoleId = "592581668796104705";
+		if(message.member.roles.has(config.adminRoleId)) {
 			try {
 				await message.react('🇬🇧');
-				await message.react('🇫🇷');
 				await message.react('🇩🇪');
+				await message.react('🇫🇷');
 			} catch (error) {
 				console.error('One of the emojis failed to react.');
 			}
@@ -126,19 +80,16 @@ const events = {
 	MESSAGE_REACTION_REMOVE: 'messageReactionRemove',
 };
 
+// Unnecessary to call "role" again, you can continue using the old msg/reactions
 client.on('raw', event => {
-	// console.log(event);
 	const eventName = event.t;
 	if(eventName === 'MESSAGE_REACTION_ADD') {
-		if(event.d.message_id === '592568108095373323') {
-			// console.log("correct message");
+		if(event.d.message_id === config.reactMessageId) {
 			var reactionChannel = client.channels.get(event.d.channel_id);
 			if(reactionChannel.messages.has(event.d.message_id)) return;
 			reactionChannel.fetchMessage(event.d.message_id)
 				.then(msg => {
-					//console.log(msg);
 					var msgReaction = msg.reactions.get(event.d.emoji.name);
-					//console.log(msgReaction);
 					var user = client.users.get(event.d.user_id);
 					client.emit('messageReactionAdd', msgReaction, user);
 				})
@@ -149,28 +100,28 @@ client.on('raw', event => {
 
 client.on('messageReactionAdd', (messageReaction, user) => {
 	var guild = messageReaction.message.guild;
-	// EN
+	// EN '%F0%9F%87%AC%F0%9F%87%A7'
 	var roleId = messageReaction.emoji.identifier;
 	var role = guild.roles.find(role => role.name.toLowerCase() === 'en');
-	if(role && roleId === '%F0%9F%87%AC%F0%9F%87%A7') {
+	if(role && roleId === config.en) {
 		var member = guild.members.find(member => member.id === user.id);
 		if(member) {
 			member.addRole(role.id);
 		}
 	}
-	// DE
+	// DE '%F0%9F%87%A9%F0%9F%87%AA'
 	var roleId = messageReaction.emoji.identifier;
 	var role = guild.roles.find(role => role.name.toLowerCase() === 'de');
-	if(role && roleId === '%F0%9F%87%A9%F0%9F%87%AA') {
+	if(role && roleId === config.de) {
 		var member = guild.members.find(member => member.id === user.id);
 		if(member) {
 			member.addRole(role.id);
 		}
 	}
-	// FR
+	// FR '%F0%9F%87%AB%F0%9F%87%B7'
 	var roleId = messageReaction.emoji.identifier;
 	var role = guild.roles.find(role => role.name.toLowerCase() === 'fr');
-	if(role && roleId === '%F0%9F%87%AB%F0%9F%87%B7') {
+	if(role && roleId === config.fr) {
 		var member = guild.members.find(member => member.id === user.id);
 		if(member) {
 			member.addRole(role.id);
@@ -181,9 +132,10 @@ client.on('messageReactionAdd', (messageReaction, user) => {
 
 client.on('messageReactionRemove', (messageReaction, user) => {
 	var guild = messageReaction.message.guild;
+	// EN '%F0%9F%87%AC%F0%9F%87%A7'
 	var roleId = messageReaction.emoji.identifier;
 	var role = guild.roles.find(role => role.name.toLowerCase() === 'en');
-	if(role && roleId === '%F0%9F%87%AC%F0%9F%87%A7')
+	if(role && roleId === config.en)
 	{
 		var member = guild.members.find(member => member.id === user.id);
 		if(member)
@@ -191,21 +143,19 @@ client.on('messageReactionRemove', (messageReaction, user) => {
 			member.removeRole(role.id);
 		}
 	}
-	
-	// DE
+	// DE '%F0%9F%87%A9%F0%9F%87%AA'
 	var roleId = messageReaction.emoji.identifier;
 	var role = guild.roles.find(role => role.name.toLowerCase() === 'de');
-	if(role && roleId === '%F0%9F%87%A9%F0%9F%87%AA') {
+	if(role && roleId === config.de) {
 		var member = guild.members.find(member => member.id === user.id);
 		if(member) {
 			member.removeRole(role.id);
 		}
 	}
-	
-	// FR
+	// FR '%F0%9F%87%AB%F0%9F%87%B7'
 	var roleId = messageReaction.emoji.identifier;
 	var role = guild.roles.find(role => role.name.toLowerCase() === 'fr');
-	if(role && roleId === '%F0%9F%87%AB%F0%9F%87%B7') {
+	if(role && roleId === config.fr) {
 		var member = guild.members.find(member => member.id === user.id);
 		if(member) {
 			member.removeRole(role.id);
