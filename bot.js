@@ -33,6 +33,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
          }
      }
 });
-// THIS  MUST  BE  THIS  WAY
 
-client.login(process.env.BOT_TOKEN);//BOT_TOKEN is the Client Secret
+// THIS  MUST  BE  THIS  WAY
+bot.login(process.env.BOT_TOKEN);//BOT_TOKEN is the Client Secret
